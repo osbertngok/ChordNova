@@ -1,0 +1,7 @@
+.idea
+*.o
+ChordNova
+Makefile
+moc_*.h
+moc_*.cpp
+.qmake.stash
