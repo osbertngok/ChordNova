@@ -3,7 +3,7 @@
 #include "constant.h"
 #include "utility.h"
 #include <algorithm>
-#include <set>
+#include <bitset>
 
 using namespace std;
 using namespace chordnovarw::model;
@@ -28,12 +28,15 @@ namespace chordnovarw {
         }
       }
 
-      // pitch class set (sorted, unique)
-      set<int> pc_set_sorted;
+      // pitch class set (sorted, unique) — bitset for O(1) dedup
+      bitset<ET_SIZE> pc_bits;
       for (const auto &pitch : pitches) {
-        pc_set_sorted.insert(pitch.get_pitch_class().value());
+        pc_bits.set(pitch.get_pitch_class().value());
       }
-      vector<int> pc_vec(pc_set_sorted.begin(), pc_set_sorted.end());
+      vector<int> pc_vec;
+      for (int i = 0; i < ET_SIZE; ++i) {
+        if (pc_bits.test(i)) pc_vec.push_back(i);
+      }
 
       // self_diff
       const vector<int> normal = normal_form(pc_vec);

@@ -12,7 +12,7 @@ namespace {
 OrderedChord make_chord(std::initializer_list<int> notes) {
   std::vector<Pitch> pitches;
   for (int n : notes)
-    pitches.push_back(Pitch(static_cast<char>(n)));
+    pitches.push_back(Pitch(static_cast<uint8_t>(n)));
   return OrderedChord(std::move(pitches));
 }
 
@@ -197,4 +197,69 @@ TEST(SubstitutionTest, SubstituteEntriesHaveStats) {
     EXPECT_LE(entry.sim_orig, 100);
     EXPECT_GE(entry.stats.sv, 0);
   }
+}
+
+// ── BothChords mode tests ────────────────────────────────────────
+
+TEST(SubstitutionTest, BothChordsSamplingFindsPairs) {
+  auto ante = make_chord({72, 76, 79});  // C E G
+  auto post = make_chord({77, 81, 84});  // F A C
+
+  SubstitutionConfig config;
+  config.object = SubstituteObj::BothChords;
+  config.test_all = false;
+  config.sample_size = 5000;  // Small sample for speed
+  config.sort_order = "S";
+  config.sv.center = 0;
+  config.sv.radius = 100;
+
+  auto result = substitute(ante, post, config);
+
+  // BothChords mode populates pairs, not entries
+  EXPECT_GT(result.pairs.size(), 0u);
+  EXPECT_TRUE(result.entries.empty());
+  EXPECT_GT(result.total_evaluated, 0);
+}
+
+TEST(SubstitutionTest, BothChordsPairsHaveValidStats) {
+  auto ante = make_chord({72, 76, 79});
+  auto post = make_chord({77, 81, 84});
+
+  SubstitutionConfig config;
+  config.object = SubstituteObj::BothChords;
+  config.test_all = false;
+  config.sample_size = 5000;
+  config.sort_order = "S";
+  config.sv.center = 0;
+  config.sv.radius = 100;
+
+  auto result = substitute(ante, post, config);
+
+  for (const auto& pair : result.pairs) {
+    EXPECT_GE(pair.ante.sim_orig, 0);
+    EXPECT_LE(pair.ante.sim_orig, 100);
+    EXPECT_GE(pair.post.sim_orig, 0);
+    EXPECT_LE(pair.post.sim_orig, 100);
+    EXPECT_GE(pair.ante.stats.sv, 0);
+    EXPECT_GE(pair.post.stats.sv, 0);
+  }
+}
+
+TEST(SubstitutionTest, BothChordsProgressCallback) {
+  auto ante = make_chord({72, 76, 79});
+  auto post = make_chord({77, 81, 84});
+
+  SubstitutionConfig config;
+  config.object = SubstituteObj::BothChords;
+  config.test_all = false;
+  config.sample_size = 5000;
+  config.sort_order = "S";
+  config.sv.center = 0;
+  config.sv.radius = 100;
+
+  int callback_count = 0;
+  auto result = substitute(ante, post, config,
+      [&](long long, long long) { callback_count++; });
+
+  EXPECT_GT(callback_count, 0);
 }

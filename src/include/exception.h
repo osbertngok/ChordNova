@@ -11,7 +11,7 @@
 namespace chordnovaexception {
 using namespace chordnovalanguage;
 
-enum ChordNovaExceptionCode : uint16_t {
+enum class ChordNovaExceptionCode : uint16_t {
   CNEC_ResultNotFound = 0x01,
   CNEC_UnknownError = 0xff
 };
@@ -46,7 +46,7 @@ class ChordNovaGenericException : public ChordNovaExceptionBase {
 
  public:
 
-  explicit ChordNovaGenericException(const std::string& s) : ChordNovaExceptionBase(ChordNovaExceptionCode::CNEC_UnknownError, s) {}
+  explicit ChordNovaGenericException(const std::string& s) : ChordNovaExceptionBase(static_cast<uint32_t>(ChordNovaExceptionCode::CNEC_UnknownError), s) {}
 
   char const *GetCodeString(Language language) const override {
     switch (language) {

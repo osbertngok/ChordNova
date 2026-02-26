@@ -10,8 +10,13 @@ using Stats = model::BigramChordStatistics;
 
 namespace {
 
+struct SortKey {
+  std::function<double(const CandidateEntry&)> extractor;
+  bool ascending;
+};
+
 // Extract a double value from stats given a sort key character
-std::function<double(const CandidateEntry&)> get_key(char ch) {
+std::function<double(const CandidateEntry&)> get_extractor(char ch) {
   switch (ch) {
     case 'P': return [](const CandidateEntry& e) { return static_cast<double>(e.stats.sim_orig); };
     case 'N': return [](const CandidateEntry& e) { return static_cast<double>(e.stats.pitch_class_set.size()); };
@@ -33,19 +38,10 @@ std::function<double(const CandidateEntry&)> get_key(char ch) {
   }
 }
 
-} // anonymous namespace
-
-void sort_candidates(std::vector<CandidateEntry>& candidates,
-                     const std::string& sort_order) {
-  if (sort_order.empty() || candidates.empty()) return;
-
-  // Since CandidateEntry contains BigramChordStatistics with const fields
-  // (non-move-assignable), we sort indices and then rearrange via a permutation.
-  const size_t n = candidates.size();
-  std::vector<size_t> indices(n);
-  std::iota(indices.begin(), indices.end(), 0);
-
-  // Read right-to-left
+// Parse sort_order string (right-to-left) into a vector of SortKeys
+// ordered primary-first (leftmost key = most significant = first in vector).
+std::vector<SortKey> parse_sort_keys(const std::string& sort_order) {
+  std::vector<SortKey> keys;
   int pos = static_cast<int>(sort_order.size()) - 1;
   while (pos >= 0) {
     bool ascending = false;
@@ -57,25 +53,46 @@ void sort_candidates(std::vector<CandidateEntry>& candidates,
       ch = sort_order[pos];
     }
 
-    auto key_fn = get_key(ch);
-    if (key_fn) {
-      if (ascending) {
-        std::stable_sort(indices.begin(), indices.end(),
-            [&](size_t a, size_t b) {
-              return key_fn(candidates[a]) < key_fn(candidates[b]);
-            });
-      } else {
-        std::stable_sort(indices.begin(), indices.end(),
-            [&](size_t a, size_t b) {
-              return key_fn(candidates[a]) > key_fn(candidates[b]);
-            });
-      }
+    auto extractor = get_extractor(ch);
+    if (extractor) {
+      keys.push_back({std::move(extractor), ascending});
     }
     --pos;
   }
+  // Reverse so leftmost key (primary) is first
+  std::reverse(keys.begin(), keys.end());
+  return keys;
+}
 
-  // Apply the permutation using a temporary vector of unique_ptrs
-  // to avoid move-assignment issues with const fields
+} // anonymous namespace
+
+void sort_candidates(std::vector<CandidateEntry>& candidates,
+                     const std::string& sort_order) {
+  if (sort_order.empty() || candidates.empty()) return;
+
+  auto keys = parse_sort_keys(sort_order);
+  if (keys.empty()) return;
+
+  // Since CandidateEntry contains BigramChordStatistics with const fields
+  // (non-move-assignable), we sort indices and then rearrange via a permutation.
+  const size_t n = candidates.size();
+  std::vector<size_t> indices(n);
+  std::iota(indices.begin(), indices.end(), 0);
+
+  // Single stable_sort with composite comparator
+  std::stable_sort(indices.begin(), indices.end(),
+      [&](size_t a, size_t b) {
+        for (const auto& key : keys) {
+          double va = key.extractor(candidates[a]);
+          double vb = key.extractor(candidates[b]);
+          if (va != vb) {
+            return key.ascending ? (va < vb) : (va > vb);
+          }
+        }
+        return false;  // equal on all keys
+      });
+
+  // Apply the permutation
   std::vector<CandidateEntry> sorted;
   sorted.reserve(n);
   for (size_t idx : indices) {

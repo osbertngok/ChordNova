@@ -9,6 +9,7 @@
 #include <functional>
 #include <optional>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 namespace chordnovarw::algorithm {
@@ -31,10 +32,10 @@ struct ValidationContext {
   std::optional<model::OrderedChordStatistics> candidate_stats;
 
   /// Set IDs for uniqueness checking (RemoveDupType mode)
-  std::vector<int>& rec_ids;
+  std::unordered_set<int>& rec_ids;
 
   /// Vec IDs for movement vector uniqueness
-  std::vector<long long>& vec_ids;
+  std::unordered_set<long long>& vec_ids;
 
   /// Previous single_chroma values (for span/chroma computations)
   const std::vector<int>& prev_single_chroma;

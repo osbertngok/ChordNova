@@ -2,6 +2,7 @@
 #define CHORDNOVARW_SRC_INCLUDE_IO_NOTEPARSER_H_
 
 #include "model/orderedchord.h"
+#include <cstdint>
 #include <optional>
 #include <string>
 
@@ -33,9 +34,9 @@ namespace chordnovarw::io {
  * and accidental-first format ("#C4", "bB3").
  *
  * \param token A single note token string.
- * \return MIDI note number 0-127, or -1 on failure.
+ * \return MIDI note number 0-127, or std::nullopt on failure.
  */
-[[nodiscard]] int nametonum(const std::string& token);
+[[nodiscard]] std::optional<uint8_t> nametonum(const std::string& token);
 
 } // namespace chordnovarw::io
 

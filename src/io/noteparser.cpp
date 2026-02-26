@@ -1,6 +1,7 @@
 #include "io/noteparser.h"
 #include "model/pitch.h"
 #include <algorithm>
+#include <charconv>
 #include <cctype>
 #include <cmath>
 #include <sstream>
@@ -10,13 +11,17 @@ namespace chordnovarw::io {
 
 using namespace chordnovarw::model;
 
-int nametonum(const std::string& token) {
-  if (token.empty()) return -1;
+std::optional<uint8_t> nametonum(const std::string& token) {
+  if (token.empty()) return std::nullopt;
 
   // Check if it's a pure MIDI number
   if (std::isdigit(static_cast<unsigned char>(token[0]))) {
-    int val = std::atoi(token.c_str());
-    return (val >= 0 && val <= 127) ? val : -1;
+    int val = 0;
+    auto [ptr, ec] = std::from_chars(token.data(), token.data() + token.size(), val);
+    if (ec != std::errc{} || ptr != token.data() + token.size())
+      return std::nullopt;
+    if (val < 0 || val > 127) return std::nullopt;
+    return static_cast<uint8_t>(val);
   }
 
   // Path 1: "Letter[accidental][octave]" — e.g. C#4, Bb3, G
@@ -57,7 +62,7 @@ int nametonum(const std::string& token) {
       // Check that there's nothing unexpected remaining
       if (pos == token.size() || (!has_octave && pos == token.size())) {
         int result = val + 12 * octave;
-        if (result >= 0 && result <= 127) return result;
+        if (result >= 0 && result <= 127) return static_cast<uint8_t>(result);
       }
     }
   }
@@ -68,9 +73,9 @@ int nametonum(const std::string& token) {
     size_t pos = 0;
     if (token[0] == '#') { val += 1; ++pos; }
     else if (token[0] == 'b') { val -= 1; ++pos; }
-    else return -1;
+    else return std::nullopt;
 
-    if (pos >= token.size()) return -1;
+    if (pos >= token.size()) return std::nullopt;
     char ch = std::toupper(static_cast<unsigned char>(token[pos]));
     switch (ch) {
       case 'C': val += 12; break;
@@ -80,7 +85,7 @@ int nametonum(const std::string& token) {
       case 'G': val += 19; break;
       case 'A': val += 21; break;
       case 'B': val += 23; break;
-      default: return -1;
+      default: return std::nullopt;
     }
     ++pos;
     int octave = 4;
@@ -96,11 +101,11 @@ int nametonum(const std::string& token) {
     }
     if (pos == token.size()) {
       int result = val + 12 * octave;
-      if (result >= 0 && result <= 127) return result;
+      if (result >= 0 && result <= 127) return static_cast<uint8_t>(result);
     }
   }
 
-  return -1;
+  return std::nullopt;
 }
 
 std::optional<OrderedChord> parse_notes(const std::string& input) {
@@ -117,9 +122,9 @@ std::optional<OrderedChord> parse_notes(const std::string& input) {
   std::vector<int> midi_notes;
   bool no_octave = true;
   for (const auto& t : tokens) {
-    int note = nametonum(t);
-    if (note < 0) return std::nullopt;
-    midi_notes.push_back(note);
+    auto note = nametonum(t);
+    if (!note) return std::nullopt;
+    midi_notes.push_back(*note);
 
     // Check if any token has an octave number at the end
     if (!t.empty() && std::isdigit(static_cast<unsigned char>(t.back())))
@@ -157,7 +162,7 @@ std::optional<OrderedChord> parse_notes(const std::string& input) {
   pitches.reserve(midi_notes.size());
   for (int m : midi_notes) {
     if (m < 0 || m > 127) return std::nullopt;
-    pitches.push_back(Pitch(static_cast<char>(m)));
+    pitches.push_back(Pitch(static_cast<uint8_t>(m)));
   }
 
   return OrderedChord(std::move(pitches));

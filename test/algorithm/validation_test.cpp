@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <unordered_set>
 #include "algorithm/validation.h"
 #include "model/orderedchord.h"
 #include "model/chordstatistics.h"
@@ -17,8 +18,8 @@ struct TestContext {
   OrderedChord prev_chord;
   OrderedChordStatistics prev_stats;
   VoiceLeadingResult vl_result;
-  std::vector<int> rec_ids;
-  std::vector<long long> vec_ids;
+  std::unordered_set<int> rec_ids;
+  std::unordered_set<long long> vec_ids;
   std::vector<int> prev_single_chroma;
   double prev_chroma_old = 0.0;
   std::vector<OrderedChord> record;
@@ -393,6 +394,220 @@ TEST(ValidationTest, VecUniquenessRejectsDuplicate) {
 
   OrderedChord chord2("D4 F4 A4");
   EXPECT_FALSE(validate_vec_uniqueness(ctx, chord2));
+}
+
+// ── Stage 3: AlignMode::List ─────────────────────────────────────
+
+TEST(ValidationTest, AlignmentListModePass) {
+  TestContext tc;
+  tc.config.alignment.align_mode = AlignMode::List;
+  // C major triad root position: alignment is [1, 3, 5] (root, 3rd, 5th)
+  tc.config.alignment.alignment_list = {{1, 3, 5}};
+  auto ctx = tc.ctx();
+  OrderedChord chord("C4 E4 G4");
+  EXPECT_TRUE(validate_alignment(ctx, chord));
+}
+
+TEST(ValidationTest, AlignmentListModeFail) {
+  TestContext tc;
+  tc.config.alignment.align_mode = AlignMode::List;
+  // Only allow [1, 5, 3] which doesn't match [1, 3, 5]
+  tc.config.alignment.alignment_list = {{1, 5, 3}};
+  auto ctx = tc.ctx();
+  OrderedChord chord("C4 E4 G4");
+  EXPECT_FALSE(validate_alignment(ctx, chord));
+}
+
+// ── Stage 4: Exclusion intervals ────────────────────────────────
+
+TEST(ValidationTest, ExclusionIntervalRejects) {
+  TestContext tc;
+  tc.config.exclusion.enabled = true;
+  // Exclude perfect 5th (interval 7) in any octave, matching 1+ occurrence
+  tc.config.exclusion.exclusion_intervals = {{7, 0, 10, 1, 100}};
+  auto ctx = tc.ctx();
+  // C4-G4 has interval 7 (perfect 5th)
+  OrderedChord chord("C4 E4 G4");
+  EXPECT_FALSE(validate_exclusion(ctx, chord));
+}
+
+TEST(ValidationTest, ExclusionIntervalPassesNoMatch) {
+  TestContext tc;
+  tc.config.exclusion.enabled = true;
+  // Exclude tritone (interval 6), which C major doesn't have
+  tc.config.exclusion.exclusion_intervals = {{6, 0, 10, 1, 100}};
+  auto ctx = tc.ctx();
+  OrderedChord chord("C4 E4 G4");
+  EXPECT_TRUE(validate_exclusion(ctx, chord));
+}
+
+// ── Stage 5: Pedal non-bass period ──────────────────────────────
+
+TEST(ValidationTest, PedalPeriodOnBeatPass) {
+  TestContext tc;
+  tc.config.pedal.enabled = true;
+  tc.config.pedal.in_bass = false;
+  tc.config.pedal.period = 2;
+  tc.config.pedal.pedal_notes_set = {0};  // C pitch class
+  tc.config.pedal.pedal_notes = {60};
+  tc.config.continual = true;
+  // record size = 0, period = 2, 0 % 2 == 0 → period check active
+  auto ctx = tc.ctx();
+  OrderedChord chord("C4 E4 G4");  // Contains C pitch class
+  EXPECT_TRUE(validate_pedal(ctx, chord));
+}
+
+TEST(ValidationTest, PedalPeriodOnBeatFailMissingPC) {
+  TestContext tc;
+  tc.config.pedal.enabled = true;
+  tc.config.pedal.in_bass = false;
+  tc.config.pedal.period = 1;
+  tc.config.pedal.pedal_notes_set = {1};  // C# pitch class
+  tc.config.pedal.pedal_notes = {61};
+  tc.config.continual = true;
+  auto ctx = tc.ctx();
+  OrderedChord chord("C4 E4 G4");  // No C# pitch class
+  EXPECT_FALSE(validate_pedal(ctx, chord));
+}
+
+TEST(ValidationTest, PedalPeriodOffBeatPassContainsMidi) {
+  TestContext tc;
+  tc.config.pedal.enabled = true;
+  tc.config.pedal.in_bass = false;
+  tc.config.pedal.period = 2;
+  tc.config.pedal.pedal_notes = {60};
+  tc.config.pedal.pedal_notes_set = {0};
+  tc.config.continual = true;
+  // record size = 1, period = 2, 1 % 2 != 0 → off-beat path
+  tc.record.push_back(OrderedChord("C4 E4 G4"));
+  auto ctx = tc.ctx();
+  OrderedChord chord("C4 E4 G4");  // Contains MIDI 60
+  EXPECT_TRUE(validate_pedal(ctx, chord));
+}
+
+TEST(ValidationTest, PedalPeriodOffBeatFailMissingMidi) {
+  TestContext tc;
+  tc.config.pedal.enabled = true;
+  tc.config.pedal.in_bass = false;
+  tc.config.pedal.period = 2;
+  tc.config.pedal.pedal_notes = {61};  // C#
+  tc.config.pedal.pedal_notes_set = {1};
+  tc.config.continual = true;
+  tc.record.push_back(OrderedChord("C4 E4 G4"));
+  auto ctx = tc.ctx();
+  OrderedChord chord("C4 E4 G4");  // No MIDI 61
+  EXPECT_FALSE(validate_pedal(ctx, chord));
+}
+
+// ── Stage 11: VLSetting::Default and Percentage ─────────────────
+
+TEST(ValidationTest, VLSettingDefaultRejectsParallelMotion) {
+  TestContext tc;
+  tc.config.voice_leading.vl_min = 0;
+  tc.config.voice_leading.vl_max = 4;
+  tc.config.voice_leading.vl_setting = VLSetting::Default;
+  tc.config.harmonic.c_min = 0;
+  tc.config.harmonic.c_max = 15;
+  tc.config.harmonic.sv_min = 0;
+  tc.config.harmonic.sv_max = 100;
+  auto ctx = tc.ctx();
+  // All voices move up by 2 = parallel motion → rejected
+  OrderedChord chord("D4 F#4 A4");
+  EXPECT_FALSE(validate_voice_leading(ctx, chord));
+}
+
+TEST(ValidationTest, VLSettingDefaultPassesContraryMotion) {
+  TestContext tc;
+  tc.config.voice_leading.vl_min = 0;
+  tc.config.voice_leading.vl_max = 4;
+  tc.config.voice_leading.vl_setting = VLSetting::Default;
+  tc.config.harmonic.c_min = 0;
+  tc.config.harmonic.c_max = 15;
+  tc.config.harmonic.sv_min = 0;
+  tc.config.harmonic.sv_max = 100;
+  auto ctx = tc.ctx();
+  // Contrary motion: some up, some down
+  OrderedChord chord("B3 F4 A4");
+  EXPECT_TRUE(validate_voice_leading(ctx, chord));
+}
+
+TEST(ValidationTest, VLSettingPercentagePass) {
+  TestContext tc;
+  tc.config.voice_leading.vl_min = 0;
+  tc.config.voice_leading.vl_max = 4;
+  tc.config.voice_leading.vl_setting = VLSetting::Percentage;
+  // Allow any direction distribution
+  tc.config.voice_leading.steady_min = 0.0;
+  tc.config.voice_leading.steady_max = 1.0;
+  tc.config.voice_leading.ascending_min = 0.0;
+  tc.config.voice_leading.ascending_max = 1.0;
+  tc.config.voice_leading.descending_min = 0.0;
+  tc.config.voice_leading.descending_max = 1.0;
+  tc.config.harmonic.c_min = 0;
+  tc.config.harmonic.c_max = 15;
+  tc.config.harmonic.sv_min = 0;
+  tc.config.harmonic.sv_max = 100;
+  auto ctx = tc.ctx();
+  OrderedChord chord("D4 F4 A4");
+  EXPECT_TRUE(validate_voice_leading(ctx, chord));
+}
+
+TEST(ValidationTest, VLSettingPercentageFailTooManyAscending) {
+  TestContext tc;
+  tc.config.voice_leading.vl_min = 0;
+  tc.config.voice_leading.vl_max = 4;
+  tc.config.voice_leading.vl_setting = VLSetting::Percentage;
+  tc.config.voice_leading.steady_min = 0.0;
+  tc.config.voice_leading.steady_max = 1.0;
+  // Max 10% ascending (0.1 * 3 = 0.3, so max 0 ascending voices)
+  tc.config.voice_leading.ascending_min = 0.0;
+  tc.config.voice_leading.ascending_max = 0.1;
+  tc.config.voice_leading.descending_min = 0.0;
+  tc.config.voice_leading.descending_max = 1.0;
+  tc.config.harmonic.c_min = 0;
+  tc.config.harmonic.c_max = 15;
+  tc.config.harmonic.sv_min = 0;
+  tc.config.harmonic.sv_max = 100;
+  auto ctx = tc.ctx();
+  // All voices move up by 2 = 3 ascending, but max allowed = 0
+  OrderedChord chord("D4 F#4 A4");
+  EXPECT_FALSE(validate_voice_leading(ctx, chord));
+}
+
+// ── Stage 12: SimilarityConfig extended lookback ────────────────
+
+TEST(ValidationTest, SimilarityExtendedLookbackPass) {
+  TestContext tc;
+  tc.config.harmonic.x_min = 0;
+  tc.config.harmonic.x_max = 100;
+  tc.config.voice_leading.vl_max = 4;
+  tc.config.similarity.enabled = true;
+  tc.config.similarity.sim_period = {1};
+  tc.config.similarity.sim_min = {0};
+  tc.config.similarity.sim_max = {100};
+  // Add a previous chord to look back at
+  tc.record.push_back(OrderedChord("C4 E4 G4"));
+  OrderedChord chord("D4 F4 A4");
+  tc.vl_result = find_voice_leading(tc.prev_chord, chord);
+  auto ctx = tc.ctx();
+  EXPECT_TRUE(validate_similarity(ctx, chord));
+}
+
+TEST(ValidationTest, SimilarityExtendedLookbackFail) {
+  TestContext tc;
+  tc.config.harmonic.x_min = 0;
+  tc.config.harmonic.x_max = 100;
+  tc.config.voice_leading.vl_max = 4;
+  tc.config.similarity.enabled = true;
+  tc.config.similarity.sim_period = {1};
+  // Require very high similarity (impossible for different chords)
+  tc.config.similarity.sim_min = {99};
+  tc.config.similarity.sim_max = {100};
+  tc.record.push_back(OrderedChord("C4 E4 G4"));
+  OrderedChord chord("F3 A3 C4");
+  tc.vl_result = find_voice_leading(tc.prev_chord, chord);
+  auto ctx = tc.ctx();
+  EXPECT_FALSE(validate_similarity(ctx, chord));
 }
 
 // ── Pipeline integration ─────────────────────────────────────────

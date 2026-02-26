@@ -21,8 +21,8 @@ TEST(ChordRW, pitch_serialization) {
   EXPECT_EQ(Pitch("C4"), Pitch(PitchClass::C, Octave::O4));
   EXPECT_EQ(Pitch("A-5"), Pitch(PitchClass::Ab, Octave::O5));
   EXPECT_EQ(Pitch("D#"), Pitch(PitchClass::Ds, Octave::OMinus1));
-  EXPECT_EQ(Pitch("C4").get_number(), static_cast<char>(60));
-  EXPECT_EQ(Pitch("A4").get_number(), static_cast<char>(69));
+  EXPECT_EQ(Pitch("C4").get_number(), static_cast<uint8_t>(60));
+  EXPECT_EQ(Pitch("A4").get_number(), static_cast<uint8_t>(69));
 }
 
 TEST(ChordRW, contains_pitch_class) {

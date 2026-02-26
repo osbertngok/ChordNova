@@ -63,8 +63,6 @@ std::vector<std::vector<int>> compute_expansions(int min_size, int max_size) {
 } // anonymous namespace
 
 std::vector<int> ExpansionIndexCache::get(int min_size, int max_size, int index) const {
-  // Thread-safe lazy computation via local statics
-  // For simplicity and correctness, compute on demand rather than caching the full 15x15 table
   if (min_size < 1 || min_size > 15 || max_size < min_size || max_size > 15) {
     throw std::out_of_range("ExpansionIndexCache::get: invalid sizes");
   }
@@ -73,8 +71,12 @@ std::vector<int> ExpansionIndexCache::get(int min_size, int max_size, int index)
     throw std::out_of_range("ExpansionIndexCache::get: index out of range");
   }
 
-  auto expansions = compute_expansions(min_size, max_size);
-  return expansions[index];
+  auto key = std::make_pair(min_size, max_size);
+  auto it = cache_.find(key);
+  if (it == cache_.end()) {
+    it = cache_.emplace(key, compute_expansions(min_size, max_size)).first;
+  }
+  return it->second[index];
 }
 
 const ExpansionIndexCache& ExpansionIndexCache::instance() {

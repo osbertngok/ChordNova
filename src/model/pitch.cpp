@@ -11,11 +11,11 @@ using namespace chordnovarw::model;
 
 LOGGER("chordnovarw::model");
 
-Pitch::Pitch(const Pitch &pitch) : _note(pitch.get_number()) {
+Pitch::Pitch(const Pitch &pitch) : _note(pitch.get_number()) {  // NOLINT: uint8_t copy
 }
 
 Pitch::Pitch(PitchClass pitch_class, Octave octave) {
-  _note = static_cast<int>(pitch_class) + static_cast<int>(octave) * 12 + 12;
+  _note = static_cast<uint8_t>(static_cast<int>(pitch_class) + static_cast<int>(octave) * 12 + 12);
 }
 
 Pitch::Pitch(const string &str) {
@@ -65,7 +65,7 @@ Pitch::Pitch(const string &str) {
     }
   }
   if (pitch_class.has_value() && octave.has_value()) {
-    _note = static_cast<int>(pitch_class.value()) + static_cast<int>(octave.value()) * 12 + 12;
+    _note = static_cast<uint8_t>(static_cast<int>(pitch_class.value()) + static_cast<int>(octave.value()) * 12 + 12);
   } else {
     throw ChordNovaGenericException("Cannot initialize pitch from string " + str);
   }
@@ -80,7 +80,7 @@ PitchClass Pitch::get_pitch_class() const {
   return PitchClass(_note % 12);
 }
 
-char Pitch::get_number() const {
+uint8_t Pitch::get_number() const {
   return _note;
 }
 
@@ -100,7 +100,7 @@ bool Pitch::operator==(const Pitch &pitch) const {
   return _note == pitch._note;
 }
 
-Pitch::Pitch(char midi_num) : _note(midi_num) {
+Pitch::Pitch(uint8_t midi_num) : _note(midi_num) {
 }
 
 Chroma Pitch::get_chroma() const {

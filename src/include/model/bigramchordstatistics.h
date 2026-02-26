@@ -16,7 +16,7 @@ namespace chordnovarw{
      * the average Circle of Fifths position may jump by more than 6 units
      * from the previous chord, in which case a ±12 wrap is applied.
      */
-    enum OverflowState {
+    enum class OverflowState {
       NoOverflow, ///< No wrapping was applied.
       Single,     ///< Overflow adjusted after note-name generation.
       Total       ///< Full ±12 wrapping was applied to chroma_old.

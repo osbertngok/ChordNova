@@ -1,6 +1,8 @@
 #ifndef CHORDNOVARW_SRC_INCLUDE_UTILITY_COMBINATORICS_H_
 #define CHORDNOVARW_SRC_INCLUDE_UTILITY_COMBINATORICS_H_
 
+#include <map>
+#include <utility>
 #include <vector>
 
 namespace chordnovarw::utility {
@@ -68,6 +70,9 @@ public:
    * \brief Global singleton accessor.
    */
   [[nodiscard]] static const ExpansionIndexCache& instance();
+
+private:
+  mutable std::map<std::pair<int,int>, std::vector<std::vector<int>>> cache_;
 };
 
 } // namespace chordnovarw::utility

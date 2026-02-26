@@ -6,6 +6,7 @@
 #include "utility.h"
 #include <algorithm>
 #include <cmath>
+#include <bitset>
 #include <set>
 
 namespace chordnovarw::algorithm {
@@ -151,12 +152,12 @@ bool validate_pedal(
 
   const size_t record_size = ctx.record.size();
   if (record_size % pedal.period == 0) {
-    std::set<int> chord_pcs;
+    std::bitset<chordnovarw::ET_SIZE> chord_pcs;
     for (const auto& p : pitches) {
-      chord_pcs.insert(p.get_pitch_class().value());
+      chord_pcs.set(p.get_pitch_class().value());
     }
     for (int pc : pedal.pedal_notes_set) {
-      if (chord_pcs.find(pc) == chord_pcs.end())
+      if (!chord_pcs.test(pc))
         return false;
     }
     if (pedal.realign && record_size != 0) {
@@ -226,14 +227,10 @@ bool validate_scale_membership(
   if (scale.size() >= 12) return true;
 
   auto pitches = chord.get_pitches();
-  std::set<int> scale_set(scale.begin(), scale.end());
-  std::set<int> chord_pcs;
+  std::bitset<chordnovarw::ET_SIZE> scale_bits;
+  for (int s : scale) scale_bits.set(s);
   for (const auto& p : pitches) {
-    chord_pcs.insert(p.get_pitch_class().value());
-  }
-
-  for (int pc : chord_pcs) {
-    if (scale_set.find(pc) == scale_set.end())
+    if (!scale_bits.test(p.get_pitch_class().value()))
       return false;
   }
   return true;
@@ -289,11 +286,9 @@ bool validate_uniqueness(
       set_id += (1 << pc);
   }
 
-  auto it = std::lower_bound(ctx.rec_ids.begin(), ctx.rec_ids.end(), set_id);
-  if (it != ctx.rec_ids.end() && *it == set_id)
+  if (!ctx.rec_ids.insert(set_id).second)
     return false;
 
-  ctx.rec_ids.insert(it, set_id);
   return true;
 }
 
@@ -560,11 +555,9 @@ bool validate_vec_uniqueness(
     base *= 200;
   }
 
-  auto it = std::lower_bound(ctx.vec_ids.begin(), ctx.vec_ids.end(), vec_id);
-  if (it != ctx.vec_ids.end() && *it == vec_id)
+  if (!ctx.vec_ids.insert(vec_id).second)
     return false;
 
-  ctx.vec_ids.insert(it, vec_id);
   return true;
 }
 

@@ -10,6 +10,7 @@
 #include "constant.h"
 #include <cmath>
 #include <set>
+#include <unordered_set>
 
 namespace chordnovarw::algorithm {
 
@@ -34,8 +35,8 @@ ProgressionResult generate_single(
   const int vl_min = config.voice_leading.vl_min;
 
   // Mutable state for uniqueness tracking across all candidates
-  std::vector<int> rec_ids;
-  std::vector<long long> vec_ids;
+  std::unordered_set<int> rec_ids;
+  std::unordered_set<long long> vec_ids;
 
   // Compute total iteration count for progress reporting
   const auto& cache = ExpansionIndexCache::instance();
@@ -60,7 +61,7 @@ ProgressionResult generate_single(
       for (int i = 0; i < m_max; ++i) {
         int new_midi = exp_pitches[i].get_number() + mutation_vec[i];
         if (new_midi < 0 || new_midi > 127) { out_of_range = true; break; }
-        new_pitches.push_back(Pitch(static_cast<char>(new_midi)));
+        new_pitches.push_back(Pitch(static_cast<uint8_t>(new_midi)));
       }
       if (out_of_range) {
         if (progress && (iteration_count % 10000 == 0))

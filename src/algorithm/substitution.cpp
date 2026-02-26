@@ -8,6 +8,7 @@
 #include <random>
 #include <algorithm>
 #include <numeric>
+#include <bitset>
 #include <set>
 
 namespace chordnovarw::algorithm {
@@ -23,7 +24,7 @@ OrderedChord id_to_chord(int id) {
   int copy = id;
   while (copy != 0) {
     if (copy % 2 == 1)
-      pitches.push_back(Pitch(static_cast<char>(note)));
+      pitches.push_back(Pitch(static_cast<uint8_t>(note)));
     ++note;
     copy /= 2;
   }
@@ -31,13 +32,15 @@ OrderedChord id_to_chord(int id) {
 }
 
 OrderedChord reduce_to_octave6(const OrderedChord& chord) {
-  std::set<int> pcs;
+  std::bitset<ET_SIZE> pc_bits;
   for (const auto& p : chord.get_pitches())
-    pcs.insert(72 + (p.get_number() % ET_SIZE));
+    pc_bits.set(p.get_number() % ET_SIZE);
 
   std::vector<Pitch> pitches;
-  for (int pc : pcs)
-    pitches.push_back(Pitch(static_cast<char>(pc)));
+  for (int i = 0; i < ET_SIZE; ++i) {
+    if (pc_bits.test(i))
+      pitches.push_back(Pitch(static_cast<uint8_t>(72 + i)));
+  }
   return OrderedChord(std::move(pitches));
 }
 

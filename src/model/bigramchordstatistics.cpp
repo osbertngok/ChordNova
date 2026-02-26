@@ -4,6 +4,7 @@
 #include "utility.h"
 #include <algorithm>
 #include <cmath>
+#include <bitset>
 #include <set>
 #include <string>
 
@@ -207,12 +208,12 @@ ChromaOldResult compute_chroma_old(
   else if (chroma_old - prev_chroma_old > 6.0)
     val = chordnovarw::ET_SIZE * -1;
 
-  auto overflow_state = chordnovarw::model::NoOverflow;
+  auto overflow_state = chordnovarw::model::OverflowState::NoOverflow;
   if (val != 0) {
     for (auto &sc : single_chroma)
       sc += val;
     chroma_old += val;
-    overflow_state = chordnovarw::model::Total;
+    overflow_state = chordnovarw::model::OverflowState::Total;
   }
 
   return {chroma_old, overflow_state, single_chroma};
@@ -281,8 +282,8 @@ NameResult compute_name(
   for (int i = 0; i < n; ++i)
     single_chroma[i] -= overflow_amount;
 
-  if (overflow_state == chordnovarw::model::NoOverflow && overflow_amount != 0)
-    overflow_state = chordnovarw::model::Single;
+  if (overflow_state == chordnovarw::model::OverflowState::NoOverflow && overflow_amount != 0)
+    overflow_state = chordnovarw::model::OverflowState::Single;
 
   chroma_old -= overflow_amount;
   prev_chroma_old -= overflow_amount;
@@ -446,11 +447,14 @@ namespace chordnovarw {
 
       // 11. Copy Tier 1 fields from curr_stats
       // Build pitch_class_set from curr chord
-      set<int> pc_set_sorted;
+      bitset<chordnovarw::ET_SIZE> pc_bits;
       for (const auto &p : curr_pitches) {
-        pc_set_sorted.insert(p.get_pitch_class().value());
+        pc_bits.set(p.get_pitch_class().value());
       }
-      const vector<int> pitch_class_set(pc_set_sorted.begin(), pc_set_sorted.end());
+      vector<int> pitch_class_set;
+      for (int i = 0; i < chordnovarw::ET_SIZE; ++i) {
+        if (pc_bits.test(i)) pitch_class_set.push_back(i);
+      }
 
       // 12. Assemble and return
       return BigramChordStatistics(

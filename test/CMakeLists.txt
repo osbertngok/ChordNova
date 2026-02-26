@@ -19,12 +19,16 @@ add_executable(chord_nova_rw_gtest model/model.cpp
         utility/mixedradix_test.cpp
         service/expansion_test.cpp
         service/voiceleading_test.cpp
+        model/bigramstats_test.cpp
         algorithm/validation_test.cpp
         algorithm/progression_test.cpp
+        algorithm/progression_golden_test.cpp
         algorithm/sorting_test.cpp
         io/noteparser_test.cpp
         io/midi_test.cpp
+        io/formatter_test.cpp
         io/database_test.cpp
+        service/chordlibrary_test.cpp
         utility/midi_encoding_test.cpp
         service/analysis_test.cpp
         service/substitution_test.cpp

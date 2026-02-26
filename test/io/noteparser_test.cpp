@@ -6,53 +6,53 @@ using namespace chordnovarw::io;
 // ── nametonum() tests ────────────────────────────────────────────
 
 TEST(NoteParserTest, NameToNumMidiNumber) {
-  EXPECT_EQ(nametonum("60"), 60);
-  EXPECT_EQ(nametonum("0"), 0);
-  EXPECT_EQ(nametonum("127"), 127);
-  EXPECT_EQ(nametonum("128"), -1);  // Out of range
+  EXPECT_EQ(nametonum("60"), std::optional<uint8_t>(60));
+  EXPECT_EQ(nametonum("0"), std::optional<uint8_t>(0));
+  EXPECT_EQ(nametonum("127"), std::optional<uint8_t>(127));
+  EXPECT_EQ(nametonum("128"), std::nullopt);  // Out of range
 }
 
 TEST(NoteParserTest, NameToNumLetterOctave) {
-  EXPECT_EQ(nametonum("C4"), 60);
-  EXPECT_EQ(nametonum("A4"), 69);
-  EXPECT_EQ(nametonum("B3"), 59);
-  EXPECT_EQ(nametonum("C0"), 12);
+  EXPECT_EQ(nametonum("C4"), std::optional<uint8_t>(60));
+  EXPECT_EQ(nametonum("A4"), std::optional<uint8_t>(69));
+  EXPECT_EQ(nametonum("B3"), std::optional<uint8_t>(59));
+  EXPECT_EQ(nametonum("C0"), std::optional<uint8_t>(12));
 }
 
 TEST(NoteParserTest, NameToNumSharp) {
-  EXPECT_EQ(nametonum("C#4"), 61);
-  EXPECT_EQ(nametonum("F#4"), 66);
-  EXPECT_EQ(nametonum("D#4"), 63);
+  EXPECT_EQ(nametonum("C#4"), std::optional<uint8_t>(61));
+  EXPECT_EQ(nametonum("F#4"), std::optional<uint8_t>(66));
+  EXPECT_EQ(nametonum("D#4"), std::optional<uint8_t>(63));
 }
 
 TEST(NoteParserTest, NameToNumFlat) {
-  EXPECT_EQ(nametonum("Bb3"), 58);
-  EXPECT_EQ(nametonum("Eb4"), 63);
-  EXPECT_EQ(nametonum("Ab4"), 68);
+  EXPECT_EQ(nametonum("Bb3"), std::optional<uint8_t>(58));
+  EXPECT_EQ(nametonum("Eb4"), std::optional<uint8_t>(63));
+  EXPECT_EQ(nametonum("Ab4"), std::optional<uint8_t>(68));
 }
 
 TEST(NoteParserTest, NameToNumAccidentalFirst) {
-  EXPECT_EQ(nametonum("bB3"), 58);
-  EXPECT_EQ(nametonum("#C4"), 61);
-  EXPECT_EQ(nametonum("#F4"), 66);
+  EXPECT_EQ(nametonum("bB3"), std::optional<uint8_t>(58));
+  EXPECT_EQ(nametonum("#C4"), std::optional<uint8_t>(61));
+  EXPECT_EQ(nametonum("#F4"), std::optional<uint8_t>(66));
 }
 
 TEST(NoteParserTest, NameToNumNoOctave) {
   // No octave defaults to 4
-  EXPECT_EQ(nametonum("C"), 60);
-  EXPECT_EQ(nametonum("E"), 64);
-  EXPECT_EQ(nametonum("G"), 67);
+  EXPECT_EQ(nametonum("C"), std::optional<uint8_t>(60));
+  EXPECT_EQ(nametonum("E"), std::optional<uint8_t>(64));
+  EXPECT_EQ(nametonum("G"), std::optional<uint8_t>(67));
 }
 
 TEST(NoteParserTest, NameToNumLowercase) {
-  EXPECT_EQ(nametonum("c4"), 60);
-  EXPECT_EQ(nametonum("e4"), 64);
+  EXPECT_EQ(nametonum("c4"), std::optional<uint8_t>(60));
+  EXPECT_EQ(nametonum("e4"), std::optional<uint8_t>(64));
 }
 
 TEST(NoteParserTest, NameToNumInvalid) {
-  EXPECT_EQ(nametonum(""), -1);
-  EXPECT_EQ(nametonum("X"), -1);
-  EXPECT_EQ(nametonum("C-2"), -1);  // C at octave -2 would be negative
+  EXPECT_EQ(nametonum(""), std::nullopt);
+  EXPECT_EQ(nametonum("X"), std::nullopt);
+  EXPECT_EQ(nametonum("C-2"), std::nullopt);  // C at octave -2 would be negative
 }
 
 // ── parse_notes() tests ──────────────────────────────────────────

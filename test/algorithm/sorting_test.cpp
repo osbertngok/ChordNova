@@ -362,6 +362,100 @@ TEST(SortingTest, StableSortPreservesOrder) {
   EXPECT_EQ(candidates[2].stats.common_note, 3);
 }
 
+// ── Sort by pitch class count (N key) ───────────────────────────
+
+TEST(SortingTest, SortByPitchClassCountDescending) {
+  std::vector<CandidateEntry> candidates;
+  StatsBuilder sb1; sb1.pitch_class_set = {0, 4, 7};        // 3 PCs
+  StatsBuilder sb2; sb2.pitch_class_set = {0, 2, 4, 7};     // 4 PCs
+  StatsBuilder sb3; sb3.pitch_class_set = {0, 7};            // 2 PCs
+  candidates.push_back(make_entry("C4 E4 G4", sb1));
+  candidates.push_back(make_entry("C4 D4 E4 G4", sb2));
+  candidates.push_back(make_entry("C4 G4", sb3));
+
+  sort_candidates(candidates, "N");
+
+  EXPECT_EQ(candidates[0].stats.pitch_class_set.size(), 4u);
+  EXPECT_EQ(candidates[1].stats.pitch_class_set.size(), 3u);
+  EXPECT_EQ(candidates[2].stats.pitch_class_set.size(), 2u);
+}
+
+// ── Sort by tension (T key) ─────────────────────────────────────
+
+TEST(SortingTest, SortByTensionDescending) {
+  std::vector<CandidateEntry> candidates;
+  // Use chords with different tensions
+  StatsBuilder sb1; sb1.notes = {60, 64, 67};
+  StatsBuilder sb2; sb2.notes = {60, 61, 62};
+  StatsBuilder sb3; sb3.notes = {60, 67, 72};
+  candidates.push_back(make_entry("C4 E4 G4", sb1));      // tension = 7
+  candidates.push_back(make_entry("C4 D-4 D4", sb2));     // tension = 2
+  candidates.push_back(make_entry("C4 G4 C5", sb3));      // tension = 12
+
+  sort_candidates(candidates, "T");
+
+  // Tension is computed from the chord itself, so ordering depends on actual chord
+  double t0 = candidates[0].chord.get_tension();
+  double t1 = candidates[1].chord.get_tension();
+  double t2 = candidates[2].chord.get_tension();
+  EXPECT_GE(t0, t1);
+  EXPECT_GE(t1, t2);
+}
+
+// ── Sort by note count (m key) ──────────────────────────────────
+
+TEST(SortingTest, SortByNoteCountDescending) {
+  std::vector<CandidateEntry> candidates;
+  StatsBuilder sb1; sb1.notes = {60, 64, 67};
+  StatsBuilder sb2; sb2.notes = {60, 64, 67, 72};
+  StatsBuilder sb3; sb3.notes = {60, 67};
+  candidates.push_back(make_entry("C4 E4 G4", sb1));
+  candidates.push_back(make_entry("C4 E4 G4 C5", sb2));
+  candidates.push_back(make_entry("C4 G4", sb3));
+
+  sort_candidates(candidates, "m");
+
+  EXPECT_EQ(candidates[0].stats.notes.size(), 4u);
+  EXPECT_EQ(candidates[1].stats.notes.size(), 3u);
+  EXPECT_EQ(candidates[2].stats.notes.size(), 2u);
+}
+
+// ── Sort by thickness (h key) ───────────────────────────────────
+
+TEST(SortingTest, SortByThicknessDescending) {
+  std::vector<CandidateEntry> candidates;
+  StatsBuilder sb;
+  candidates.push_back(make_entry("C4 E4 G4", sb));      // narrow
+  candidates.push_back(make_entry("C3 E4 G5", sb));      // wide
+  candidates.push_back(make_entry("C4 D-4 D4", sb));     // very narrow
+
+  sort_candidates(candidates, "h");
+
+  double h0 = candidates[0].chord.get_thickness();
+  double h1 = candidates[1].chord.get_thickness();
+  double h2 = candidates[2].chord.get_thickness();
+  EXPECT_GE(h0, h1);
+  EXPECT_GE(h1, h2);
+}
+
+// ── Sort by geometrical center (g key) ──────────────────────────
+
+TEST(SortingTest, SortByGeometricalCenterDescending) {
+  std::vector<CandidateEntry> candidates;
+  StatsBuilder sb;
+  candidates.push_back(make_entry("C4 E4 G4", sb));      // center around 63.67
+  candidates.push_back(make_entry("C5 E5 G5", sb));      // center around 75.67
+  candidates.push_back(make_entry("C3 E3 G3", sb));      // center around 51.67
+
+  sort_candidates(candidates, "g");
+
+  double g0 = candidates[0].chord.get_geometrical_center();
+  double g1 = candidates[1].chord.get_geometrical_center();
+  double g2 = candidates[2].chord.get_geometrical_center();
+  EXPECT_GE(g0, g1);
+  EXPECT_GE(g1, g2);
+}
+
 // ── V key is alias for R (root_movement) ────────────────────────
 
 TEST(SortingTest, VKeyIsAliasForR) {

@@ -11,7 +11,7 @@ namespace {
 OrderedChord make_chord(std::initializer_list<int> notes) {
   std::vector<Pitch> pitches;
   for (int n : notes)
-    pitches.push_back(Pitch(static_cast<char>(n)));
+    pitches.push_back(Pitch(static_cast<uint8_t>(n)));
   return OrderedChord(std::move(pitches));
 }
 

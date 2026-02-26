@@ -48,43 +48,23 @@ std::vector<int> normal_form(const std::vector<int> &set) {
 }
 
 std::vector<int> set_intersect(const std::vector<int> &A, const std::vector<int> &B) {
-  const int A_size = A.size(), B_size = B.size();
   std::vector<int> result;
-  int i = 0, j = 0;
-  while (i < A_size && j < B_size) {
-    if (A[i] > B[j]) ++j;
-    else if (A[i] < B[j]) ++i;
-    else {
-      result.push_back(A[i]);
-      ++i;
-      ++j;
-    }
-  }
+  std::set_intersection(A.begin(), A.end(), B.begin(), B.end(),
+                        std::back_inserter(result));
   return result;
 }
 
 std::vector<int> set_union(const std::vector<int> &A, const std::vector<int> &B) {
-  std::vector<int> result(A);
-  result.insert(result.end(), B.begin(), B.end());
-  std::sort(result.begin(), result.end());
-  result.erase(std::unique(result.begin(), result.end()), result.end());
+  std::vector<int> result;
+  std::set_union(A.begin(), A.end(), B.begin(), B.end(),
+                 std::back_inserter(result));
   return result;
 }
 
 std::vector<int> set_complement(const std::vector<int> &A, const std::vector<int> &B) {
-  const int A_size = A.size(), B_size = B.size();
   std::vector<int> result;
-  int i = 0, j = 0;
-  while (i < A_size && j < B_size) {
-    while (i < A_size && j < B_size && A[i] > B[j]) ++j;
-    while (i < A_size && j < B_size && A[i] <= B[j]) {
-      if (A[i] < B[j])
-        result.push_back(A[i]);
-      ++i;
-    }
-  }
-  for (int k = i; k < A_size; ++k)
-    result.push_back(A[k]);
+  std::set_difference(A.begin(), A.end(), B.begin(), B.end(),
+                      std::back_inserter(result));
   return result;
 }
 

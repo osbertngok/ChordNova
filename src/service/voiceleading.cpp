@@ -27,7 +27,7 @@ VoiceLeadingResult find_voice_leading(
     const auto& cache = ExpansionIndexCache::instance();
     const int len = cache.count(from_size, to_size);
     int min_diff = INT_MAX;
-    int min_index = 0;
+    std::vector<Pitch> best_pitches;
 
     for (int i = 0; i < len; ++i) {
       auto expansion = expand_single(from, to_size, i);
@@ -37,12 +37,10 @@ VoiceLeadingResult find_voice_leading(
         diff += std::abs(to_pitches[j].get_number() - exp_pitches[j].get_number());
       if (diff < min_diff) {
         min_diff = diff;
-        min_index = i;
+        best_pitches = std::move(exp_pitches);
       }
     }
 
-    auto best_expansion = expand_single(from, to_size, min_index);
-    auto best_pitches = best_expansion.get_pitches();
     result.vec.reserve(to_size);
     for (int i = 0; i < to_size; ++i)
       result.vec.push_back(to_pitches[i].get_number() - best_pitches[i].get_number());
@@ -53,7 +51,7 @@ VoiceLeadingResult find_voice_leading(
     const auto& cache = ExpansionIndexCache::instance();
     const int len = cache.count(to_size, from_size);
     int min_diff = INT_MAX;
-    int min_index = 0;
+    std::vector<Pitch> best_pitches;
 
     for (int i = 0; i < len; ++i) {
       auto expansion = expand_single(to, from_size, i);
@@ -63,12 +61,10 @@ VoiceLeadingResult find_voice_leading(
         diff += std::abs(exp_pitches[j].get_number() - from_pitches[j].get_number());
       if (diff < min_diff) {
         min_diff = diff;
-        min_index = i;
+        best_pitches = std::move(exp_pitches);
       }
     }
 
-    auto best_expansion = expand_single(to, from_size, min_index);
-    auto best_pitches = best_expansion.get_pitches();
     result.vec.reserve(from_size);
     for (int i = 0; i < from_size; ++i)
       result.vec.push_back(best_pitches[i].get_number() - from_pitches[i].get_number());
@@ -101,7 +97,7 @@ VoiceLeadingResult find_voice_leading_substitution(
         out_of_range = true;
         break;
       }
-      inv_pitches.push_back(Pitch(static_cast<char>(midi)));
+      inv_pitches.push_back(Pitch(static_cast<uint8_t>(midi)));
     }
     if (out_of_range) continue;
 
