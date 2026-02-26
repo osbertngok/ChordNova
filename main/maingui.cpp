@@ -1424,83 +1424,21 @@ void Interface::input_initial()
 	set_notes(notes, edit_initial);
 }
 
+/**
+ * Parse text from edit_initial, and copy to notes.
+ * For ease of test, move the parsing logics from Interface to Chord.
+ */
 void Interface::set_notes(vector<int>& notes, QLineEdit* edit)
 {
-	notes.clear();
 	QString str_notes = edit -> text();
-	char _note[50];
-	int note;
-	int pos1 = 0, pos2 = 0, len = str_notes.size();
-	bool no_octave = true;
-	if(len >= 45)
+	QByteArray byteArray = str_notes.toLatin1();
+  string notes_text = std::string(byteArray.constData(), byteArray.size());
+  bool success = set_notes_from_text(notes_text);
+	if(!success)
 	{
 		edit -> clear();
 		notes.clear();
 		return;
-	}
-	while(pos1 < len)
-	{
-		pos2 = 0;
-		while(pos1 < len && str_notes[pos1] == ' ')
-			++pos1;
-		if(pos1 == len)  break;
-		while(pos1 < len && str_notes[pos1] != ' ')
-		{
-			_note[pos2] = str_notes[pos1].toLatin1();
-			++pos1;  ++pos2;
-		}
-		_note[pos2] = '\0';
-		int _len = strlen(_note);
-		if(_note[0] >= '0' && _note[0] <= '9')
-		{
-			note = atoi(_note);
-			no_octave = false;
-		}
-		else
-		{
-			note = nametonum(_note);
-			if(_note[_len - 1] >= '0' && _note[_len - 1] <= '9')
-				no_octave = false;
-		}
-		if(note < 0)
-		{
-			edit -> clear();
-			notes.clear();
-			return;
-		}
-		notes.push_back(note);
-	}
-
-	if(no_octave)
-	{
-		t_size = notes.size();
-		for(int i = t_size - 1; i > 0; --i)
-		{
-			if(notes[i - 1] > notes[i])
-			{
-				int octave = (notes[i - 1] - notes[i]) / 12;
-				notes[i - 1] -= (octave + 1) * 12;
-			}
-			int octave_h = (127 - notes[i]) / 12;
-			int octave_l = floor(notes[0] / 12);
-			if(octave_h + octave_l < 0)
-			{
-				edit -> clear();
-				notes.clear();
-				return;
-			}
-			else
-			{
-				int octave = (octave_h - octave_l) / 2;
-				for(int i = 0; i < t_size; ++i)
-					notes[i] += octave * 12;
-			}
-		}
-	}
-	else
-	{
-		bubble_sort(notes);
-		remove_duplicate(notes);
 	}
 }
 
@@ -1545,6 +1483,9 @@ void Interface::open_utilities()
 	 QDesktopServices::openUrl(QUrl( ((QString)"file:%1/utilities").arg(root_path) ));
 }
 
+/**
+ * This calls @ref Chord::Main() eventually.
+ */
 void Interface::run()
 {
 	QStringList str1 = {"Warning", "警告"};
@@ -1568,6 +1509,7 @@ void Interface::run()
 		read_alignment(path2);
 	}
 
+  // m_notes are initilaized either by generting automatically @ref Chord::choose_initial, or by @ref Interface::set_notes.
 	if(automatic)  choose_initial();
 	else
 	{

@@ -7,6 +7,12 @@
 #include <QLayout>
 #include "interface.h"
 
+/**
+ * Main entrypoint. Logics are in window. See @ref Interface::run.
+ * @param argc
+ * @param argv
+ * @return
+ */
 int main(int argc, char *argv[])
 {
 	srand( (int)time(0) );

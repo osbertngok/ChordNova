@@ -1,0 +1,22 @@
+var searchData=
+[
+  ['semitone_0',['Semitone',['../classchordnovarw_1_1model_1_1_semitone.html',1,'chordnovarw::model']]],
+  ['set_5fchroma_1',['set_chroma',['../classchordnova_1_1chord_1_1_chord.html#af7bfa6a75fd85e8803742822812ff80f',1,'chordnova::chord::Chord']]],
+  ['set_5fchroma_5fold_2',['set_chroma_old',['../classchordnova_1_1chord_1_1_chord.html#a430d735fbcb41b4905d48c7b3ece7ef7',1,'chordnova::chord::Chord']]],
+  ['set_5fid_3',['set_id',['../classchordnova_1_1chord_1_1_chord.html#a3d9a0b4468f97c009729b4f6f24feb3c',1,'chordnova::chord::Chord']]],
+  ['set_5fmax_5fcount_4',['set_max_count',['../classchordnova_1_1chord_1_1_chord.html#ab0ec0598b5ed5ec91ade314301b17a3b',1,'chordnova::chord::Chord']]],
+  ['set_5fname_5',['set_name',['../classchordnova_1_1chord_1_1_chord.html#ac033f4d7a0e842c1a076b50111359e4a',1,'chordnova::chord::Chord']]],
+  ['set_5fnew_5fchords_6',['set_new_chords',['../classchordnova_1_1chord_1_1_chord.html#a18ed1fdc85643d4bbd432ab52615775a',1,'chordnova::chord::Chord']]],
+  ['set_5fnotes_7',['set_notes',['../class_interface.html#a5208cf38aee7072591292d360f79b49e',1,'Interface']]],
+  ['set_5fnotes_5ffrom_5ftext_8',['set_notes_from_text',['../classchordnova_1_1chord_1_1_chord.html#a531b6251f8c46f93174bc2f5b24d34d6',1,'chordnova::chord::Chord']]],
+  ['set_5fparam1_9',['set_param1',['../classchordnova_1_1chord_1_1_chord.html#a2d984cebcf81429532ea56a8ab6fe492',1,'chordnova::chord::Chord']]],
+  ['set_5fparam2_10',['set_param2',['../classchordnova_1_1chord_1_1_chord.html#a563d4531329ab59d6d91864d0f179cd3',1,'chordnova::chord::Chord']]],
+  ['set_5fsimilarity_11',['set_similarity',['../classchordnova_1_1chord_1_1_chord.html#af0191f89458e50f837106b315408905d',1,'chordnova::chord::Chord']]],
+  ['set_5fspan_12',['set_span',['../classchordnova_1_1chord_1_1_chord.html#a378f90f4b25f36840505a42c3b41d1e6',1,'chordnova::chord::Chord']]],
+  ['set_5fvec_5fid_13',['set_vec_id',['../classchordnova_1_1chord_1_1_chord.html#a8bdb3c279869bb067d36c3987f07edbd',1,'chordnova::chord::Chord']]],
+  ['single_5fchroma_14',['single_chroma',['../classchordnova_1_1chord_1_1_chord_data.html#a0d740736d893dfc691c9c9bde1c402e7',1,'chordnova::chord::ChordData']]],
+  ['sort_5forder_5fsub_15',['sort_order_sub',['../classchordnova_1_1chord_1_1_chord.html#aa16025993e4e5a469ae71d9e8f881f50',1,'chordnova::chord::Chord']]],
+  ['sort_5fresults_16',['sort_results',['../classchordnova_1_1chord_1_1_chord.html#af2f5ac976545695c8b693f5014fcc10a',1,'chordnova::chord::Chord']]],
+  ['sub_5flibrary_17',['sub_library',['../classchordnova_1_1chord_1_1_chord.html#a4e42466c9bd47f53ef37157e56182eb7',1,'chordnova::chord::Chord']]],
+  ['sub_5fsize_18',['sub_size',['../classchordnova_1_1chord_1_1_chord.html#a1abee0271fd19a271a612b111b175300',1,'chordnova::chord::Chord']]]
+];
